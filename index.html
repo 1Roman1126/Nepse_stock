@@ -10,15 +10,14 @@
 <body>
     <header>
         <h1><i class="fas fa-chart-line"></i> Stock Dashboard</h1>
-        <nav>
-            <button onclick="fetchCSVFromS3()">Fetch Data</button>
-            <select id="companySelect">
-                <!-- Options will be populated dynamically -->
-            </select>
-        </nav>
     </header>
 
     <main>
+        <h2>List of Files in S3</h2>
+        <ul id="fileList">
+            <!-- File list will be dynamically populated here -->
+        </ul>
+
         <div class="chart-container">
             <h2>Stock Prices</h2>
             <canvas id="stockPriceChart"></canvas>
@@ -28,21 +27,6 @@
             <h2>Trading Volume</h2>
             <canvas id="tradingVolumeChart"></canvas>
         </div>
-
-        <div class="chart-container">
-            <h2>High and Low Prices</h2>
-            <canvas id="highLowPriceChart"></canvas>
-        </div>
-
-        <div class="chart-container">
-            <h2>Market Capitalization</h2>
-            <canvas id="marketCapChart"></canvas>
-        </div>
-
-        <div class="chart-container">
-            <h2>Average Traded Price</h2>
-            <canvas id="avgTradedPriceChart"></canvas>
-        </div>
     </main>
 
     <footer>
@@ -50,13 +34,10 @@
     </footer>
 
     <!-- Load required libraries via CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/aws-amplify"></script> <!-- Amplify for S3 -->
+    <script src="https://cdn.jsdelivr.net/npm/aws-amplify@latest"></script> <!-- Amplify for S3 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js for visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script> <!-- PapaParse for CSV parsing -->
-    <script src="https://cdn.jsdelivr.net/npm/aws-amplify@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@aws-amplify/storage@latest"></script>
-
-
+    
     <!-- Your script file -->
     <script src="script.js"></script>
 </body>
