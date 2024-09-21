@@ -4,8 +4,17 @@ let charts = [];  // Track chart instances
 // Fetch the CSV file from the public S3 URL when the page loads
 async function fetchCSVFromS3() {
     try {
-        const fileUrl = 'https://nepse-stock-data.s3.amazonaws.com/nepse_data_2024-09-18.csv';  // Replace with your actual S3 file URL
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Add leading 0
+        const day = String(today.getDate()).padStart(2, '0'); // Add leading 0
+        
+        const fileUrl = `https://nepse-stock-data.s3.amazonaws.com/nepse_data_${year}-${month}-${day}.csv`; // Dynamic URL based on date
+        
         const response = await fetch(fileUrl);
+        if (!response.ok) {
+            throw new Error("CSV file not found for the date");
+        }
         const csvText = await response.text();
         console.log(csvText);  // Check the fetched CSV content
 
