@@ -54,74 +54,182 @@ function populateCompanySelect() {
     select.addEventListener('change', updateCharts);
 }
 
-// Update charts based on selected companies (for comparison)
+// Update charts based on selected company
 function updateCharts() {
-    const selectedSymbols = Array.from(document.getElementById('companySelect').selectedOptions).map(option => option.value);
-    const companyData = csvData.filter(row => selectedSymbols.includes(row.SYMBOL));
+    const selectedSymbol = document.getElementById('companySelect').value;
+    const companyData = csvData.filter(row => row.SYMBOL === selectedSymbol);
 
     if (companyData.length === 0) return;
 
-    // Clear existing charts before drawing new ones
+    const dates = companyData.map(row => row.BUSINESS_DATE);  // Adjusted for BUSINESS_DATE
+    const openPrices = companyData.map(row => parseFloat(row.OPEN_PRICE));
+    const closePrices = companyData.map(row => parseFloat(row.CLOSE_PRICE));
+    const tradedQuantities = companyData.map(row => parseFloat(row.TOTAL_TRADED_QUANTITY));
+    const highPrices = companyData.map(row => parseFloat(row.HIGH_PRICE));
+    const lowPrices = companyData.map(row => parseFloat(row.LOW_PRICE));
+    const marketCaps = companyData.map(row => parseFloat(row.MARKET_CAPITALIZATION));
+    const avgTradedPrices = companyData.map(row => parseFloat(row.AVERAGE_TRADED_PRICE));
+
     resetCharts();
-
-    selectedSymbols.forEach(symbol => {
-        const symbolData = companyData.filter(row => row.SYMBOL === symbol);
-        const dates = symbolData.map(row => row.BUSINESS_DATE);
-        const closePrices = symbolData.map(row => parseFloat(row.CLOSE_PRICE));
-
-        // Draw or update the chart for each selected company
-        drawComparisonChart(symbol, dates, closePrices);
-    });
+    drawStockPriceChart(dates, openPrices, closePrices);
+    drawTradingVolumeChart(dates, tradedQuantities);
+    drawHighLowPriceChart(dates, highPrices, lowPrices);
+    drawMarketCapChart(dates, marketCaps);
+    drawAvgTradedPriceChart(dates, avgTradedPrices);
 }
 
-// Function to draw or update the comparison chart
-function drawComparisonChart(symbol, dates, closePrices) {
-    const ctx = document.getElementById('comparisonChart').getContext('2d');
-    if (!window.myComparisonChart) {
-        window.myComparisonChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: dates,
-                datasets: []
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { title: { display: true, text: 'Date' } },
-                    y: { title: { display: true, text: 'Price' } }
+// Helper function to draw Stock Price chart
+function drawStockPriceChart(dates, openPrices, closePrices) {
+    const ctx = document.getElementById('stockPriceChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Open Price',
+                    data: openPrices,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Close Price',
+                    data: closePrices,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderWidth: 2
                 }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Date' } },
+                y: { title: { display: true, text: 'Price' }, beginAtZero: false }
             }
-        });
-    }
-    const newDataset = {
-        label: symbol,
-        data: closePrices,
-        borderColor: getRandomColor(),  // Function to generate a random color for each dataset
-        fill: false
-    };
-    window.myComparisonChart.data.datasets.push(newDataset);
-    window.myComparisonChart.update();
+        }
+    });
+    charts.push(chart);
 }
 
-// Function to generate random color
-function getRandomColor() {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
+// Draw High-Low Price chart
+function drawHighLowPriceChart(dates, highPrices, lowPrices) {
+    const ctx = document.getElementById('highLowPriceChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'High Price',
+                    data: highPrices,
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Low Price',
+                    data: lowPrices,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Date' } },
+                y: { title: { display: true, text: 'Price' }, beginAtZero: false }
+            }
+        }
+    });
+    charts.push(chart);
+}
+
+// Draw Trading Volume chart
+function drawTradingVolumeChart(dates, tradedQuantities) {
+    const ctx = document.getElementById('tradingVolumeChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Traded Quantity',
+                data: tradedQuantities,
+                backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                borderColor: 'rgba(153, 102, 255, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Date' } },
+                y: { title: { display: true, text: 'Quantity' }, beginAtZero: true }
+            }
+        }
+    });
+    charts.push(chart);
+}
+
+// Draw Market Capitalization chart
+function drawMarketCapChart(dates, marketCaps) {
+    const ctx = document.getElementById('marketCapChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Market Capitalization',
+                data: marketCaps,
+                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Date' } },
+                y: { title: { display: true, text: 'Market Cap' }, beginAtZero: true }
+            }
+        }
+    });
+    charts.push(chart);
+}
+
+// Draw Average Traded Price chart
+function drawAvgTradedPriceChart(dates, avgTradedPrices) {
+    const ctx = document.getElementById('avgTradedPriceChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Average Traded Price',
+                data: avgTradedPrices,
+                borderColor: 'rgba(255, 205, 86, 1)',
+                backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Date' } },
+                y: { title: { display: true, text: 'Price' }, beginAtZero: false }
+            }
+        }
+    });
+    charts.push(chart);
 }
 
 // Reset and destroy existing charts
 function resetCharts() {
     charts.forEach(chart => chart.destroy());
     charts = [];
-    if (window.myComparisonChart) {
-        window.myComparisonChart.destroy();
-        window.myComparisonChart = null;
-    }
 }
 
-// Load the CSV data from S3 when the page loads
 window.onload = fetchCSVFromS3;
