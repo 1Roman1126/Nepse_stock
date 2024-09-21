@@ -1,30 +1,43 @@
 let csvData = [];
 let charts = [];  // Track chart instances
 
-// Fetch the CSV file from the public S3 URL when the page loads
-async function fetchCSVFromS3() {
-    try {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0'); // Add leading 0
-        const day = String(today.getDate()).padStart(2, '0'); // Add leading 0
-        
-        const fileUrl = `https://nepse-stock-data.s3.amazonaws.com/nepse_data_${year}-${month}-${day}.csv`; // Dynamic URL based on date
-        
-        const response = await fetch(fileUrl);
-        if (!response.ok) {
-            throw new Error("CSV file not found for the date");
-        }
-        const csvText = await response.text();
-        console.log(csvText);  // Check the fetched CSV content
+// Configure AWS Amplify
+Amplify.configure({
+    Auth: {
+        // Your AWS Amplify settings here if using Cognito
+    },
+    Storage: {
+        region: 'us-east-1', // Your S3 region
+        bucket: 'nepse-stock-data', // Your S3 bucket name
+    }
+});
 
-        parseCSVData(csvText);
+// List and fetch the latest CSV file from the S3 bucket
+async function fetchLatestCSVFromS3() {
+    try {
+        // List all objects in the bucket
+        const list = await Amplify.Storage.list('', { level: 'public' }); // List all files
+        const csvFiles = list.filter(file => file.key.endsWith('.csv'));  // Filter only CSV files
+        
+        // Sort the CSV files by the date in the filename (assuming filenames are like nepse_data_YYYY-MM-DD.csv)
+        csvFiles.sort((a, b) => new Date(b.key.split('_')[2].replace('.csv', '')) - new Date(a.key.split('_')[2].replace('.csv', '')));
+
+        // Get the most recent file
+        const latestFile = csvFiles[0];
+        console.log("Latest file:", latestFile.key);  // Check which file was selected
+
+        // Fetch the latest CSV file
+        const fileUrl = await Amplify.Storage.get(latestFile.key, { level: 'public' }); // Get the public URL of the latest file
+        const response = await fetch(fileUrl);
+        const csvText = await response.text();
+        
+        parseCSVData(csvText);  // Parse and visualize the CSV data
     } catch (error) {
-        console.error("Error fetching CSV from S3:", error);
+        console.error("Error fetching the latest CSV from S3:", error);
     }
 }
 
-// Parse the fetched CSV data using PapaParse and populate charts
+// Parse the fetched CSV data using PapaParse
 function parseCSVData(csvText) {
     Papa.parse(csvText, {
         header: true,
@@ -114,131 +127,4 @@ function drawStockPriceChart(dates, openPrices, closePrices) {
         options: {
             responsive: true,
             scales: {
-                x: { title: { display: true, text: 'Date' } },
-                y: { title: { display: true, text: 'Price' }, beginAtZero: false }
-            }
-        }
-    });
-    charts.push(chart);
-}
-
-// Draw High-Low Price chart
-function drawHighLowPriceChart(dates, highPrices, lowPrices) {
-    const ctx = document.getElementById('highLowPriceChart').getContext('2d');
-    const chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: dates,
-            datasets: [
-                {
-                    label: 'High Price',
-                    data: highPrices,
-                    borderColor: 'rgba(255, 159, 64, 1)',
-                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                    borderWidth: 2
-                },
-                {
-                    label: 'Low Price',
-                    data: lowPrices,
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderWidth: 2
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: { title: { display: true, text: 'Date' } },
-                y: { title: { display: true, text: 'Price' }, beginAtZero: false }
-            }
-        }
-    });
-    charts.push(chart);
-}
-
-// Draw Trading Volume chart
-function drawTradingVolumeChart(dates, tradedQuantities) {
-    const ctx = document.getElementById('tradingVolumeChart').getContext('2d');
-    const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: dates,
-            datasets: [{
-                label: 'Traded Quantity',
-                data: tradedQuantities,
-                backgroundColor: 'rgba(153, 102, 255, 0.5)',
-                borderColor: 'rgba(153, 102, 255, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: { title: { display: true, text: 'Date' } },
-                y: { title: { display: true, text: 'Quantity' }, beginAtZero: true }
-            }
-        }
-    });
-    charts.push(chart);
-}
-
-// Draw Market Capitalization chart
-function drawMarketCapChart(dates, marketCaps) {
-    const ctx = document.getElementById('marketCapChart').getContext('2d');
-    const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: dates,
-            datasets: [{
-                label: 'Market Capitalization',
-                data: marketCaps,
-                backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: { title: { display: true, text: 'Date' } },
-                y: { title: { display: true, text: 'Market Cap' }, beginAtZero: true }
-            }
-        }
-    });
-    charts.push(chart);
-}
-
-// Draw Average Traded Price chart
-function drawAvgTradedPriceChart(dates, avgTradedPrices) {
-    const ctx = document.getElementById('avgTradedPriceChart').getContext('2d');
-    const chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: dates,
-            datasets: [{
-                label: 'Average Traded Price',
-                data: avgTradedPrices,
-                borderColor: 'rgba(255, 205, 86, 1)',
-                backgroundColor: 'rgba(255, 205, 86, 0.2)',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: { title: { display: true, text: 'Date' } },
-                y: { title: { display: true, text: 'Price' }, beginAtZero: false }
-            }
-        }
-    });
-    charts.push(chart);
-}
-
-// Reset and destroy existing charts
-function resetCharts() {
-    charts.forEach(chart => chart.destroy());
-    charts = [];
-}
-
-window.onload = fetchCSVFromS3;
+                x: { title: { display: true, text: '
