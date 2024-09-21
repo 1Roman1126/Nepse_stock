@@ -11,11 +11,9 @@
     <header>
         <h1><i class="fas fa-chart-line"></i> Stock Dashboard</h1>
         <nav>
-            <!-- Updated dropdown for multiple selections -->
-            <select id="companySelect" multiple>
+            <select id="companySelect">
                 <!-- Options will be populated dynamically -->
             </select>
-            <button onclick="updateCharts()">Show Comparison</button>
         </nav>
     </header>
 
@@ -45,12 +43,6 @@
         <div class="chart-container">
             <h2>Average Traded Price</h2>
             <canvas id="avgTradedPriceChart"></canvas>
-        </div>
-
-        <!-- New comparison chart -->
-        <div class="chart-container">
-            <h2>Company Comparison</h2>
-            <canvas id="comparisonChart"></canvas>
         </div>
     </main>
 
